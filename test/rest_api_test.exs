@@ -27,7 +27,7 @@ defmodule RestApiTest.Router do
       end
     end
 
-    test "POST /post should return ok" do
+    test "POST /post should create a post" do
       # Assert that there are no elements in the db
       assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 0
 
@@ -55,6 +55,88 @@ defmodule RestApiTest.Router do
       # Task: It is very naive to check that the post was created. We should ideally
       # also check if the content was correct. Go ahead and try it out and post your
       # answer in the comment section below.
+      assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 1
+    end
+
+    def createPosts() do
+      result = Mongo.insert_many!(:mongo, "Posts",[
+        %{name: "Post 1", content: "Content 1"},
+        %{name: "Post 2", content: "Content 2"},
+      ])
+
+      result.inserted_ids |> Enum.map(fn id -> BSON.ObjectId.encode!(id) end)
+    end
+
+    test "GET /posts should fetch all the posts" do
+      createPosts()
+
+      conn = conn(:get, "/posts")
+      conn = RestApi.Router.call(conn, @opts)
+
+      assert conn.state == :sent
+      assert conn.status == 200
+
+      resp = Jason.decode!(conn.resp_body);
+
+      assert Enum.count(resp) == 2
+
+      assert %{
+        "id" => _,
+        "content" => "Content 1",
+        "name" => "Post 1"
+      } = Enum.at(resp, 0)
+
+      assert %{
+        "id" => _,
+        "content" => "Content 2",
+        "name" => "Post 2"
+      } = Enum.at(resp, 1)
+
+    end
+
+    test "GET /post/:id should fetch a single post" do
+      [id | _] = createPosts()
+
+      conn = conn(:get, "/post/#{id}")
+      conn = RestApi.Router.call(conn, @opts)
+
+      assert conn.state == :sent
+      assert conn.status == 200
+
+      assert %{
+        "id" => _,
+        "content" => "Content 1",
+        "name" => "Post 1"
+      } = Jason.decode!(conn.resp_body)
+    end
+
+    test "PUT /post/:id should update a post" do
+      [id | _] = createPosts()
+
+      conn = conn(:put, "/post/#{id}", %{content: "Content 3"})
+      conn = RestApi.Router.call(conn, @opts)
+
+      assert conn.state == :sent
+      assert conn.status == 200
+
+      assert %{
+        "id" => _,
+        "content" => "Content 3",
+        "name" => "Post 1"
+      } = Jason.decode!(conn.resp_body)
+    end
+
+    test "DELETE /post/:id should delete a post" do
+      [id | _] = createPosts()
+
+      assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 2
+
+      conn = conn(:delete, "/post/#{id}", %{content: "Content 3"})
+      conn = RestApi.Router.call(conn, @opts)
+
+      assert conn.state == :sent
+      assert conn.status == 200
+
       assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 1
     end
   end
