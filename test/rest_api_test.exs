@@ -1,4 +1,5 @@
 defmodule RestApiTest.Router do
+  import Plug.BasicAuth
   use ExUnit.Case
   use Plug.Test
 
@@ -6,6 +7,7 @@ defmodule RestApiTest.Router do
 
   test "GET / should return ok" do
     conn = conn(:get, "/")
+    conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
 
     conn = RestApi.Router.call(conn, @opts)
 
@@ -33,6 +35,7 @@ defmodule RestApiTest.Router do
 
       # Make an API to call create a post
       conn = conn(:post, "/post", %{name: "Post 1", content: "Content of post"})
+      conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
       # Checking that request was actually sent
@@ -71,6 +74,7 @@ defmodule RestApiTest.Router do
       createPosts()
 
       conn = conn(:get, "/posts")
+      conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
       assert conn.state == :sent
@@ -98,6 +102,7 @@ defmodule RestApiTest.Router do
       [id | _] = createPosts()
 
       conn = conn(:get, "/post/#{id}")
+      conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
       assert conn.state == :sent
@@ -114,6 +119,7 @@ defmodule RestApiTest.Router do
       [id | _] = createPosts()
 
       conn = conn(:put, "/post/#{id}", %{content: "Content 3"})
+      conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
       assert conn.state == :sent
@@ -132,6 +138,7 @@ defmodule RestApiTest.Router do
       assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 2
 
       conn = conn(:delete, "/post/#{id}", %{content: "Content 3"})
+      conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
       assert conn.state == :sent

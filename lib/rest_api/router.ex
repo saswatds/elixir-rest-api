@@ -2,9 +2,11 @@ defmodule RestApi.Router do
   alias RestApi.JSONUtils, as: JSON
 
   use Plug.Router
+  import Plug.BasicAuth
 
   plug(Plug.Logger)
   plug(:match)
+  plug(:basic_auth, Application.get_env(:rest_api, :basic_auth))
 
   plug(Plug.Parsers,
     parsers: [:json],
