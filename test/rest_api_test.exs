@@ -11,7 +11,6 @@ defmodule RestApiTest.Router do
 
     conn = RestApi.Router.call(conn, @opts)
 
-    assert conn.state == :sent
     assert conn.status == 200
     assert conn.resp_body == "OK"
   end
@@ -37,9 +36,6 @@ defmodule RestApiTest.Router do
       conn = conn(:post, "/post", %{name: "Post 1", content: "Content of post"})
       conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
-
-      # Checking that request was actually sent
-      assert conn.state == :sent
 
       # Checking that response code was 200
       assert conn.status == 200
@@ -77,7 +73,6 @@ defmodule RestApiTest.Router do
       conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
-      assert conn.state == :sent
       assert conn.status == 200
 
       resp = Jason.decode!(conn.resp_body);
@@ -105,7 +100,6 @@ defmodule RestApiTest.Router do
       conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
-      assert conn.state == :sent
       assert conn.status == 200
 
       assert %{
@@ -122,7 +116,6 @@ defmodule RestApiTest.Router do
       conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
-      assert conn.state == :sent
       assert conn.status == 200
 
       assert %{
@@ -141,7 +134,6 @@ defmodule RestApiTest.Router do
       conn = put_req_header(conn, "authorization", encode_basic_auth("user", "secret"))
       conn = RestApi.Router.call(conn, @opts)
 
-      assert conn.state == :sent
       assert conn.status == 200
 
       assert Mongo.find(:mongo, "Posts", %{}) |> Enum.count == 1
